@@ -1,0 +1,188 @@
+package swing;
+
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class CategoryMenuPanel extends JFrame {
+    private JTable productTable;
+    private DefaultTableModel tableModel;
+    private JTextArea totalDisplay;
+    private JPanel menuPanel;
+    private double totalAmount = 0.0;
+
+    public CategoryMenuPanel() {
+        setTitle("포스기 시스템");
+        setSize(1000, 750);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        // 상품 목록 테이블
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.setBorder(new TitledBorder("상품 목록"));
+        String[] columnNames = {"메뉴", "단가", "수량", "금액"};
+        tableModel = new DefaultTableModel(columnNames, 0);
+        productTable = new JTable(tableModel);
+        JScrollPane tableScrollPane = new JScrollPane(productTable);
+        leftPanel.add(tableScrollPane, BorderLayout.CENTER);
+
+        // 합계 금액 표시
+        totalDisplay = new JTextArea(2, 20);
+        totalDisplay.setEditable(false);
+        totalDisplay.setFont(new Font("Monospaced", Font.BOLD, 18));
+        totalDisplay.setBorder(BorderFactory.createTitledBorder("합계 금액"));
+        leftPanel.add(totalDisplay, BorderLayout.SOUTH);
+        add(leftPanel, BorderLayout.WEST);
+
+        // 카테고리 및 메뉴 영역
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.setBorder(new TitledBorder("카테고리 및 메뉴"));
+
+        // 카테고리 버튼
+        JPanel categoryPanel = new JPanel(new GridLayout(2, 3, 5, 5));
+        categoryPanel.setBorder(new TitledBorder("카테고리"));
+        String[] categories = {"커피", "디저트", "음료", "스낵", "차", "기타"};
+        for (String category : categories) {
+            JButton categoryButton = new JButton(category);
+            categoryPanel.add(categoryButton);
+
+            // 카테고리 클릭 시 메뉴 표시
+            categoryButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    displayMenuForCategory(category);
+                }
+            });
+        }
+        rightPanel.add(categoryPanel, BorderLayout.NORTH);
+
+        // 메뉴 버튼 패널
+        menuPanel = new JPanel(new GridLayout(3, 3, 5, 5));
+        menuPanel.setBorder(new TitledBorder("메뉴"));
+        rightPanel.add(menuPanel, BorderLayout.CENTER);
+
+        // 결제 수단
+        JPanel paymentMethodsPanel = new JPanel(new GridLayout(3, 1, 5, 5));
+        paymentMethodsPanel.setBorder(new TitledBorder("결제 수단"));
+        String[] paymentMethods = {"카드", "현금", "쿠폰"};
+        for (String method : paymentMethods) {
+            JButton methodButton = new JButton(method);
+            paymentMethodsPanel.add(methodButton);
+
+            methodButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    JOptionPane.showMessageDialog(null, method + " 결제되었습니다.", "결제 완료", JOptionPane.INFORMATION_MESSAGE);
+                }
+            });
+        }
+        rightPanel.add(paymentMethodsPanel, BorderLayout.SOUTH);
+        add(rightPanel, BorderLayout.CENTER);
+
+        // 계산기
+        JPanel calculatorPanel = new JPanel(new BorderLayout());
+        calculatorPanel.setBorder(new TitledBorder("계산기"));
+        JTextArea calcDisplay = new JTextArea(1, 20);
+        calcDisplay.setEditable(false);
+        calculatorPanel.add(calcDisplay, BorderLayout.NORTH);
+
+        JPanel calcButtonsPanel = new JPanel(new GridLayout(4, 4, 5, 5));
+        String[] calcButtons = {"7", "8", "9", "C", "4", "5", "6", "-", "1", "2", "3", "+", "0", ".", "=", "확인"};
+        for (String button : calcButtons) {
+            JButton calcButton = new JButton(button);
+            calcButtonsPanel.add(calcButton);
+
+            calcButton.addActionListener(e -> {
+                if (button.equals("C")) {
+                    calcDisplay.setText("");
+                } else if (button.equals("=")) {
+                    try {
+                        double result = eval(calcDisplay.getText());
+                        calcDisplay.setText(String.valueOf(result));
+                    } catch (Exception ex) {
+                        calcDisplay.setText("오류");
+                    }
+                } else {
+                    calcDisplay.append(button);
+                }
+            });
+        }
+        calculatorPanel.add(calcButtonsPanel, BorderLayout.CENTER);
+        add(calculatorPanel, BorderLayout.SOUTH);
+
+        setVisible(true);
+    }
+
+    // 카테고리 선택 시 메뉴 표시
+    private void displayMenuForCategory(String category) {
+        menuPanel.removeAll(); // 기존 메뉴 초기화
+        String[] menuItems;
+
+        switch (category) {
+            case "커피":
+                menuItems = new String[]{"아메리카노", "카페라떼", "카푸치노"};
+                break;
+            case "디저트":
+                menuItems = new String[]{"초코케이크", "치즈케이크", "마카롱"};
+                break;
+            case "음료":
+                menuItems = new String[]{"콜라", "오렌지주스", "레몬에이드"};
+                break;
+            case "스낵":
+                menuItems = new String[]{"감자칩", "쿠키", "견과류"};
+                break;
+            case "차":
+                menuItems = new String[]{"녹차", "홍차", "캐모마일"};
+                break;
+            case "기타":
+                menuItems = new String[]{"아이스크림", "샌드위치", "생수"};
+                break;
+            default:
+                menuItems = new String[]{};
+        }
+
+        for (String item : menuItems) {
+            JButton menuButton = new JButton(item);
+            menuButton.addActionListener(new MenuAction(item, Math.random() * 10 + 1)); // 랜덤 가격 설정
+            menuPanel.add(menuButton);
+        }
+
+        menuPanel.revalidate();
+        menuPanel.repaint();
+    }
+
+    // 메뉴 버튼 클릭 시 상품 목록에 추가
+    private class MenuAction implements ActionListener {
+        private String menuName;
+        private double price;
+
+        public MenuAction(String menuName, double price) {
+            this.menuName = menuName;
+            this.price = price;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            tableModel.addRow(new Object[]{menuName, String.format("%.2f", price), 1, String.format("%.2f", price)});
+            totalAmount += price;
+            updateTotal();
+        }
+    }
+
+    // 합계 금액 업데이트
+    private void updateTotal() {
+        totalDisplay.setText(String.format("₩ %.2f", totalAmount));
+    }
+
+    // 계산기 연산 처리
+    private double eval(String expression) {
+        return new CategoryMenuPanel().getEngineByName("JavaScript").eval(expression);
+    }
+
+    public static void main(String[] args) {
+        new CategoryMenuPanel();
+    }
+}
